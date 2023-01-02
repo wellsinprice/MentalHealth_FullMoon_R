@@ -1,0 +1,60 @@
+---
+title: "MentalHealth"
+author: "Wellsin Price"
+date: "2023-01-02"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Mental Health Admissions on Full Moons
+## Data analysis reproducing findings of Blackman, S., and Catalina, D.(1973).
+
+Load Libraries and data
+```{r}
+library(tidyverse)
+library(Stat2Data)
+```
+
+```{r}
+data("MentalHealth")
+glimpse(MentalHealth)
+```
+## Visualize the data
+```{r}
+ggplot(data = MentalHealth, aes(x = Moon, y = Admission)) +
+  geom_boxplot(color = "black", fill = "ghostwhite")
+```
+```{r}
+MentalHealth %>%
+  summarize(mean_admsn = mean(Admission),
+            sd_admsn = sd(Admission),
+            min_admsn = min(Admission),
+            max_admsn = max(Admission),
+            mdn_admsn = median(Admission))
+```
+'During' exhibits 4 outliers
+```{r}
+# Filter data to examine the outliers closer
+during_mental_adm <- MentalHealth %>%
+  filter(Moon == "During")
+glimpse(during_mental_adm)
+```
+```{r}
+ggplot(data = during_mental_adm, aes(x = Admission, y = Moon)) +
+  geom_boxplot(color = "black", fill = "midnightblue")
+```
+
+```{r}
+# Summarize data
+during_mental_adm %>%
+  summarize(mean_adm = mean(Admission),
+            sd_adm = sd(Admission),
+            min_adm = min(Admission),
+            max_adm = max(Admission),
+            mdn_adm = median(Admission))
+```
+
+
