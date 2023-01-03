@@ -56,5 +56,12 @@ during_mental_adm %>%
             max_adm = max(Admission),
             mdn_adm = median(Admission))
 ```
+```{r}
+# Perform a regression analysis of the entire dataset
+regression_mental_adm <- lm(formula = Admission ~ Moon, data = MentalHealth)
+# Get a regression table of the linear regression model
+get_regression_table(regression_mental_adm)
+```
+
 
 
