@@ -12,56 +12,98 @@ knitr::opts_chunk$set(echo = TRUE)
 # Mental Health Admissions on Full Moons
 ## Data analysis reproducing findings of Blackman, S., and Catalina, D.(1973).
 
-Load Libraries and data
+Load Libraries and dataset
 ```{r}
-library(tidyverse)
-library(Stat2Data)
+library(tidyverse) # Data Science toolbox
+library(Stat2Data) # Dataset
+library(infer) # For statistical analysis
 ```
 
 ```{r}
-data("MentalHealth")
-glimpse(MentalHealth)
+data("MentalHealth") # Loaded from Stat2Data
+MentalHealth # Observe the imported dataset
 ```
-## Visualize the data
+## Exploration
 ```{r}
-ggplot(data = MentalHealth, aes(x = Moon, y = Admission)) +
-  geom_boxplot(color = "black", fill = "ghostwhite")
-```
-```{r}
+# Piping the dataset to compare the mean admissions to the moon cycle
+MentalHealth %>% 
+  group_by(Moon) %>%
+  summarize(admission_mean = mean(Admission))
+# Piping the dataset to compare mean admissions to month
 MentalHealth %>%
-  summarize(mean_admsn = mean(Admission),
-            sd_admsn = sd(Admission),
-            min_admsn = min(Admission),
-            max_admsn = max(Admission),
-            mdn_admsn = median(Admission))
+  group_by(Month) %>%
+  summarize(admission_mean = mean(Admission))
 ```
-'During' exhibits 4 outliers
+From this, we can establish that the variables Moon and Admission provide better comparison for analysis.
 ```{r}
-# Filter data to examine the outliers closer
-during_mental_adm <- MentalHealth %>%
-  filter(Moon == "During")
-glimpse(during_mental_adm)
+# Visualizing the dataset and two variables as a box plot
+ggplot(MentalHealth, aes(x = Moon, y = Admission, fill = Moon)) +
+  geom_boxplot() +
+  labs(title = "Boxplot of Admissions to Mental Health ERs During Moon Cycle")
 ```
+X
 ```{r}
-ggplot(data = during_mental_adm, aes(x = Admission, y = Moon)) +
-  geom_boxplot(color = "black", fill = "midnightblue")
+# Filtering out After and Before separately to compare to During
+# After:
+mentalhealth_after_during <- MentalHealth %>%
+  filter(Moon != "Before")
+# Before:
+mentalhealth_before_during <- MentalHealth %>%
+  filter(Moon != "After")
+
 ```
 
 ```{r}
-# Summarize data
-during_mental_adm %>%
-  summarize(mean_adm = mean(Admission),
-            sd_adm = sd(Admission),
-            min_adm = min(Admission),
-            max_adm = max(Admission),
-            mdn_adm = median(Admission))
+# Calculation of observed difference in means
+# After:
+obs_diff_after_during <- mentalhealth_after_during %>%
+  specify(Admission ~ Moon) %>%
+  calculate(stat = "diff in means", order = c("After", "During"))
+# Before:
+obs_diff_before_during <- mentalhealth_before_during %>%
+  specify(Admission ~ Moon) %>%
+  calculate(stat = "diff in means", order = c("Before", "During"))
+# View calculated values
+obs_diff_after_during
+obs_diff_before_during
 ```
+Given the smaller size, after-during is better suited for hypothesis testing
 ```{r}
-# Perform a regression analysis of the entire dataset
-regression_mental_adm <- lm(formula = Admission ~ Moon, data = MentalHealth)
-# Get a regression table of the linear regression model
-get_regression_table(regression_mental_adm)
+# Generate null distribution of delta
+adm_in_null <- mentalhealth_after_during %>%
+  specify(Admission ~ Moon) %>%
+  hypothesize(null = "independence") %>%
+  generate(reps = 5000, type = 'permute')
 ```
 
+```{r}
+# Calculate difference in means
+adm_diff_in_null <- adm_in_null %>%
+  calculate(stat = "diff in means", order = c("After", "During"))
+# Slice a window of 5 replicates
+adm_diff_in_null %>%
+  slice(1:5)
+```
+```{r}
+#adm_diff_in_null %>%
+#  visualize(adm_diff_in_null) +
+#  shade_p_value(obs_stat = obs_diff_after_during, direction = "both")
+  
+```
+```{r}
+# Get the p-value for the calculated difference
+adm_diff_in_null %>%
+  get_pvalue(obs_stat = obs_diff_after_during, direction = "both")
+```
+```{r}
+# Run a t test for comparison
+t.test(Admission ~ Moon, var.equal = TRUE, data = mentalhealth_after_during)
+```
+```{r}
+# Fit data to regression model
+mentalhealth_regression <- lm(formula = Admission ~ Moon, data = MentalHealth)
+# Get regression table
+get_regression_table(mentalhealth_regression)
+```
 
 
