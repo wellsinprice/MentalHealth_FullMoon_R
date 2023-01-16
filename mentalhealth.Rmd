@@ -1,18 +1,23 @@
 ---
-title: "MentalHealth"
+title: "Mental Health Admissions by Moon Cycle"
 author: "Wellsin Price"
-date: "2023-01-02"
+date: "2023-01-16"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+set.seed(88)
 ```
 
-# Mental Health Admissions on Full Moons
+# Mental Health Admissions and Full Moons
+
 ## Data analysis reproducing findings of Blackman, S., and Catalina, D.(1973).
 
-Load Libraries and dataset
+The purpose of this script is to reproduce Blackman and Catalina's conclusion by way of computational analysis. The motivation is to demonstrate both programming and statistical thinking skills.
+
+### Load Libraries and dataset
+
 ```{r}
 library(tidyverse) # Data Science toolbox
 library(Stat2Data) # Dataset
@@ -23,7 +28,10 @@ library(infer) # For statistical analysis
 data("MentalHealth") # Loaded from Stat2Data
 MentalHealth # Observe the imported dataset
 ```
-## Exploration
+
+### Data Exploration and Wrangling
+The relationships between admissions and the variables month and moon need to be explored to determine which inquiry is worth exploring further.
+The script below wrangles the data to do such that.
 ```{r}
 # Piping the dataset to compare the mean admissions to the moon cycle
 MentalHealth %>% 
@@ -34,14 +42,24 @@ MentalHealth %>%
   group_by(Month) %>%
   summarize(admission_mean = mean(Admission))
 ```
-From this, we can establish that the variables Moon and Admission provide better comparison for analysis.
+
+From this, we can establish that the relationship between Moon and Admission provide a more straightforward analysis given less entries to compare. Observing the data trends between the two new tables also alludes to two different stories to be told.
+
+### Analysis into Month:
+April demonstrated the highest admission mean of the 12 months, followed by May and March respectively. This could demonstrate an interesting phenomena: post-winter blues. 
+
+
+### Analysis into Moon:
+The study aimed to understand the relationship between admissions and moon cycles, so naturally an analysis replicating theirs is in order.
 ```{r}
 # Visualizing the dataset and two variables as a box plot
 ggplot(MentalHealth, aes(x = Moon, y = Admission, fill = Moon)) +
   geom_boxplot() +
   labs(title = "Boxplot of Admissions to Mental Health ERs During Moon Cycle")
 ```
+
 X
+
 ```{r}
 # Filtering out After and Before separately to compare to During
 # After:
@@ -67,7 +85,9 @@ obs_diff_before_during <- mentalhealth_before_during %>%
 obs_diff_after_during
 obs_diff_before_during
 ```
+
 Given the smaller size, after-during is better suited for hypothesis testing
+
 ```{r}
 # Generate null distribution of delta
 adm_in_null <- mentalhealth_after_during %>%
@@ -84,26 +104,21 @@ adm_diff_in_null <- adm_in_null %>%
 adm_diff_in_null %>%
   slice(1:5)
 ```
-```{r}
-#adm_diff_in_null %>%
-#  visualize(adm_diff_in_null) +
-#  shade_p_value(obs_stat = obs_diff_after_during, direction = "both")
-  
-```
+
 ```{r}
 # Get the p-value for the calculated difference
 adm_diff_in_null %>%
   get_pvalue(obs_stat = obs_diff_after_during, direction = "both")
 ```
+
 ```{r}
 # Run a t test for comparison
 t.test(Admission ~ Moon, var.equal = TRUE, data = mentalhealth_after_during)
 ```
+
 ```{r}
 # Fit data to regression model
 mentalhealth_regression <- lm(formula = Admission ~ Moon, data = MentalHealth)
 # Get regression table
-get_regression_table(mentalhealth_regression)
+# get_regression_table(mentalhealth_regression)
 ```
-
-
